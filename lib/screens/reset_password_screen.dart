@@ -5,12 +5,10 @@ import '../services/api_service.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email;
-  final String? resetCode; // Development için (production'da null olacak)
 
   const ResetPasswordScreen({
     super.key,
     required this.email,
-    this.resetCode,
   });
 
   @override
@@ -29,10 +27,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   void initState() {
     super.initState();
-    // Development için kodu otomatik doldur
-    if (widget.resetCode != null) {
-      _codeController.text = widget.resetCode!;
-    }
+    // Kod artık emailden gelecek, otomatik doldurmuyoruz
   }
 
   Future<void> _resetPassword() async {

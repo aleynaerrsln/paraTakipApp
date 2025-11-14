@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../widgets/animated_panda.dart';
 import '../widgets/lamp_light.dart';
 import 'dashboard_screen.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -250,7 +251,30 @@ class _LoginScreenState extends State<LoginScreen>
               // Giriş Butonu
               _buildGradientButton(),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
+
+              // Şifremi Unuttum Linki
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ForgotPasswordScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'Şifremi Unuttum?',
+                    style: TextStyle(
+                      color: Color(0xFFEEE2B9),
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 10),
 
               // Kayıt Ol Linki
               Row(

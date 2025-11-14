@@ -43,13 +43,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     if (result['success']) {
       if (mounted) {
-        // Başarılı - Reset ekranına git
+        // Başarılı mesajı göster
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Şifre sıfırlama kodu email adresinize gönderildi!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+
+        // Reset ekranına git
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ResetPasswordScreen(
               email: _emailController.text,
-              resetCode: result['data']['resetCode'], // Development için
             ),
           ),
         );
