@@ -387,7 +387,7 @@ class ApiService {
         final data = jsonDecode(response.body);
         return {'success': true, 'data': data};
       } else {
-        return {'success': false, 'error': 'Kullanıcı bilgisi alınamadı'};
+        return {'success': false, 'error': 'Kullanıcıı bilgisi alınamadı'};
       }
     } catch (e) {
       return {'success': false, 'error': 'Bağlantı hatası: $e'};
