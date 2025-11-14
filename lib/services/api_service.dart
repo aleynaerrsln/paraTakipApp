@@ -393,4 +393,61 @@ class ApiService {
       return {'success': false, 'error': 'Bağlantı hatası: $e'};
     }
   }
+  Future<Map<String, dynamic>> forgotPassword({
+    required String email,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/forgot-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': data};
+      } else {
+        return {'success': false, 'error': data['error']};
+      }
+    } catch (e) {
+      return {'success': false, 'error': 'Bağlantı hatası: $e'};
+    }
+  }
+
+  // Şifreyi sıfırla
+  Future<Map<String, dynamic>> resetPassword({
+    required String email,
+    required String resetCode,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/reset-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'resetCode': resetCode,
+          'newPassword': newPassword,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': data};
+      } else {
+        return {'success': false, 'error': data['error']};
+      }
+    } catch (e) {
+      return {'success': false, 'error': 'Bağlantı hatası: $e'};
+    }
+  }
+
+
+
+
+
 }
