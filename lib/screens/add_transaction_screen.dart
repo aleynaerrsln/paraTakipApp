@@ -436,7 +436,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             child: _isLoading
                 ? const CircularProgressIndicator(color: Colors.black)
                 : const Text(
-              'Kaydet',
+              'Kaydett',
               style: TextStyle(
                 color: Colors.black87,
                 fontSize: 18,
