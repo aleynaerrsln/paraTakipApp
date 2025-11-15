@@ -1,4 +1,4 @@
-// lib/screens/dashboard_screen.dart - MODERN VERSİYON
+// lib/screens/dashboard_screen.dart - UPDATED VERSION
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui';
@@ -24,6 +24,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   List<dynamic> _recentTransactions = [];
   String _selectedFilter = 'all';
   String _userName = '';
+  bool _isTransactionsExpanded = true;
 
   late AnimationController _fadeController;
   late AnimationController _scaleController;
@@ -117,59 +118,49 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E21),
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // Modern App Bar
-          _buildModernAppBar(),
-
-          // Content
-          SliverToBoxAdapter(
-            child: RefreshIndicator(
-              onRefresh: _loadData,
-              color: const Color(0xFFFFD700),
-              backgroundColor: const Color(0xFF1E1E2C),
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(20),
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: ScaleTransition(
-                    scale: _scaleAnimation,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Hoşgeldin Banner
-                        _buildWelcomeBanner(),
-                        const SizedBox(height: 25),
-
-                        // Filtre Butonları
-                        _buildModernFilterButtons(),
-                        const SizedBox(height: 25),
-
-                        // Özet Kartları
-                        _buildModernSummaryCards(),
-                        const SizedBox(height: 35),
-
-                        // Son İşlemler Başlık
-                        _buildSectionHeader('Son İşlemler', Icons.receipt_long),
-                        const SizedBox(height: 15),
-
-                        // İşlemler Listesi
-                        _isLoading
-                            ? _buildLoadingState()
-                            : _buildModernTransactionsList(),
-                      ],
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        color: const Color(0xFFF59E0B),
+        backgroundColor: const Color(0xFF1E1E2C),
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            _buildModernAppBar(),
+            SliverPadding(
+              padding: const EdgeInsets.all(20),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildWelcomeBanner(),
+                          const SizedBox(height: 25),
+                          _buildModernFilterButtons(),
+                          const SizedBox(height: 25),
+                          _buildModernSummaryCards(),
+                          const SizedBox(height: 35),
+                          _buildSectionHeader('Son İşlemler', Icons.receipt_long),
+                          const SizedBox(height: 15),
+                          _isLoading
+                              ? _buildLoadingState()
+                              : (_isTransactionsExpanded
+                              ? _buildModernTransactionsList()
+                              : _buildCollapsedView()),
+                          const SizedBox(height: 100),
+                        ],
+                      ),
                     ),
                   ),
-                ),
+                ]),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-
-      // Modern FAB
       floatingActionButton: _buildModernFAB(),
     );
   }
@@ -201,7 +192,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               fontSize: 18,
               foreground: Paint()
                 ..shader = const LinearGradient(
-                  colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                  colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
                 ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
             ),
           ),
@@ -254,7 +245,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 color: Colors.white.withOpacity(0.1),
               ),
             ),
-            child: Icon(icon, color: const Color(0xFFFFD700), size: 20),
+            child: Icon(icon, color: const Color(0xFFF59E0B), size: 20),
           ),
         ),
       ),
@@ -269,13 +260,13 @@ class _DashboardScreenState extends State<DashboardScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFFFFD700).withOpacity(0.15),
-            const Color(0xFFFFA500).withOpacity(0.05),
+            const Color(0xFFF59E0B).withOpacity(0.15),
+            const Color(0xFFFBBF24).withOpacity(0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFFFD700).withOpacity(0.3),
+          color: const Color(0xFFF59E0B).withOpacity(0.3),
           width: 1,
         ),
       ),
@@ -284,12 +275,12 @@ class _DashboardScreenState extends State<DashboardScreen>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFD700).withOpacity(0.2),
+              color: const Color(0xFFF59E0B).withOpacity(0.2),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
               Icons.waving_hand,
-              color: Color(0xFFFFD700),
+              color: Color(0xFFF59E0B),
               size: 32,
             ),
           ),
@@ -360,7 +351,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     decoration: BoxDecoration(
                       gradient: isSelected
                           ? const LinearGradient(
-                        colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                        colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
                       )
                           : null,
                       color: isSelected ? null : Colors.white.withOpacity(0.05),
@@ -374,7 +365,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                       boxShadow: isSelected
                           ? [
                         BoxShadow(
-                          color: const Color(0xFFFFD700).withOpacity(0.3),
+                          color: const Color(0xFFF59E0B).withOpacity(0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -432,7 +423,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           'Bakiye',
           _summary['balance']?.toDouble() ?? 0,
           Icons.account_balance_wallet,
-          const Color(0xFFFFD700),
+          const Color(0xFFF59E0B),
           200,
         ),
       ],
@@ -454,7 +445,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         return Transform.scale(
           scale: value,
           child: Opacity(
-            opacity: value,
+            opacity: value.clamp(0.0, 1.0),
             child: child,
           ),
         );
@@ -537,29 +528,79 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildSectionHeader(String title, IconData icon) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _isTransactionsExpanded = !_isTransactionsExpanded;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.white.withOpacity(0.1),
+              Colors.white.withOpacity(0.05),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.1),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: Colors.white, size: 20),
             ),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: Colors.black87, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            if (_recentTransactions.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${_recentTransactions.length}',
+                  style: const TextStyle(
+                    color: Color(0xFFF59E0B),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            const SizedBox(width: 12),
+            AnimatedRotation(
+              turns: _isTransactionsExpanded ? 0.5 : 0,
+              duration: const Duration(milliseconds: 300),
+              child: Icon(
+                Icons.keyboard_arrow_down,
+                color: Colors.white.withOpacity(0.7),
+                size: 28,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -577,6 +618,10 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
       ),
     );
+  }
+
+  Widget _buildCollapsedView() {
+    return const SizedBox.shrink();
   }
 
   Widget _buildModernTransactionsList() {
@@ -611,12 +656,10 @@ class _DashboardScreenState extends State<DashboardScreen>
       );
     }
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _recentTransactions.length,
-      itemBuilder: (context, index) {
-        final transaction = _recentTransactions[index];
+    return Column(
+      children: _recentTransactions.asMap().entries.map((entry) {
+        int index = entry.key;
+        final transaction = entry.value;
         final isIncome = transaction['type'] == 'income';
 
         return TweenAnimationBuilder(
@@ -627,7 +670,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             return Transform.translate(
               offset: Offset(0, 20 * (1 - value)),
               child: Opacity(
-                opacity: value,
+                opacity: value.clamp(0.0, 1.0),
                 child: child,
               ),
             );
@@ -734,20 +777,15 @@ class _DashboardScreenState extends State<DashboardScreen>
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '${isIncome ? '+' : '-'}₺${_formatCurrency(transaction['amount'].toDouble())}',
-                              style: TextStyle(
-                                color: isIncome
-                                    ? const Color(0xFF00E676)
-                                    : const Color(0xFFFF5252),
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          '${isIncome ? '+' : '-'}₺${_formatCurrency(transaction['amount'].toDouble())}',
+                          style: TextStyle(
+                            color: isIncome
+                                ? const Color(0xFF00E676)
+                                : const Color(0xFFFF5252),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
@@ -757,7 +795,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             ),
           ),
         );
-      },
+      }).toList(),
     );
   }
 
@@ -766,11 +804,11 @@ class _DashboardScreenState extends State<DashboardScreen>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
-          colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+          colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFFD700).withOpacity(0.5),
+            color: const Color(0xFFF59E0B).withOpacity(0.5),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),

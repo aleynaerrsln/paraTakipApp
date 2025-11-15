@@ -1,7 +1,7 @@
-// lib/screens/add_transaction_screen.dart
-import 'dart:ui';
+// lib/screens/add_transaction_screen.dart - COMPLETE FIXED VERSION
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:ui';
 import '../services/api_service.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -11,74 +11,674 @@ class AddTransactionScreen extends StatefulWidget {
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
 }
 
-class _AddTransactionScreenState extends State<AddTransactionScreen> {
+class _AddTransactionScreenState extends State<AddTransactionScreen>
+    with SingleTickerProviderStateMixin {
+  final _formKey = GlobalKey<FormState>();
   final _apiService = ApiService();
   final _descriptionController = TextEditingController();
   final _amountController = TextEditingController();
 
-  String _selectedType = 'income';
-  String _selectedCategory = 'Diğer';
+  String _type = 'expense';
+  String? _selectedCategory;
+  DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
+  bool _isCategoriesExpanded = false;
 
-  // Formatlama için
-  final _formatter = NumberFormat('#,##0', 'tr_TR');
+  AnimationController? _animationController;
+  Animation<double>? _fadeAnimation;
+  Animation<Offset>? _slideAnimation;
 
-  final List<String> _categories = [
-    'Maaş',
-    'Freelance',
-    'Yatırım',
-    'Market',
-    'Fatura',
-    'Ulaşım',
-    'Eğlence',
-    'Sağlık',
-    'Diğer',
-  ];
+  final Map<String, List<Map<String, dynamic>>> _categories = {
+    'income': [
+      {'name': 'Maaş', 'icon': Icons.payments, 'color': Color(0xFF00E676)},
+      {'name': 'Yatırım', 'icon': Icons.trending_up, 'color': Color(0xFF00BFA5)},
+      {'name': 'Freelance', 'icon': Icons.work, 'color': Color(0xFF1DE9B6)},
+      {'name': 'Satış', 'icon': Icons.store, 'color': Color(0xFF64FFDA)},
+      {'name': 'Hediye', 'icon': Icons.card_giftcard, 'color': Color(0xFF69F0AE)},
+      {'name': 'Diğer', 'icon': Icons.more_horiz, 'color': Color(0xFF76FF03)},
+    ],
+    'expense': [
+      {'name': 'Yemek', 'icon': Icons.restaurant, 'color': Color(0xFFFF5252)},
+      {'name': 'Ulaşım', 'icon': Icons.directions_car, 'color': Color(0xFFFF1744)},
+      {'name': 'Market', 'icon': Icons.shopping_cart, 'color': Color(0xFFFF6E40)},
+      {'name': 'Eğlence', 'icon': Icons.sports_esports, 'color': Color(0xFFFF9100)},
+      {'name': 'Faturalar', 'icon': Icons.receipt, 'color': Color(0xFFFFAB40)},
+      {'name': 'Sağlık', 'icon': Icons.local_hospital, 'color': Color(0xFFFF6D00)},
+      {'name': 'Eğitim', 'icon': Icons.school, 'color': Color(0xFFFF3D00)},
+      {'name': 'Giyim', 'icon': Icons.checkroom, 'color': Color(0xFFDD2C00)},
+      {'name': 'Diğer', 'icon': Icons.more_horiz, 'color': Color(0xFFD50000)},
+    ],
+  };
 
   @override
   void initState() {
     super.initState();
-
-    // Tutar girişi için formatlama
-    _amountController.addListener(() {
-      final text = _amountController.text;
-      if (text.isEmpty) return;
-
-      // Sadece rakamları al
-      final cleanText = text.replaceAll(RegExp(r'[^0-9]'), '');
-      if (cleanText.isEmpty) return;
-
-      // Format uygula
-      final number = int.parse(cleanText);
-      final formatted = _formatter.format(number);
-
-      // Cursor pozisyonunu koru
-      final cursorPos = _amountController.selection.base.offset;
-      final oldLength = text.length;
-
-      if (text != formatted) {
-        _amountController.value = TextEditingValue(
-          text: formatted,
-          selection: TextSelection.collapsed(
-            offset: cursorPos + (formatted.length - oldLength),
-          ),
-        );
-      }
-    });
+    _setupAnimations();
   }
 
-  Future<void> _addTransaction() async {
-    if (_descriptionController.text.isEmpty || _amountController.text.isEmpty) {
-      _showError('Açıklama ve tutar gerekli');
+  void _setupAnimations() {
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController!, curve: Curves.easeOut),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _animationController!, curve: Curves.easeOutCubic),
+    );
+
+    _animationController!.forward();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0E21),
+      appBar: _buildModernAppBar(),
+      body: (_fadeAnimation != null && _slideAnimation != null)
+          ? FadeTransition(
+        opacity: _fadeAnimation!,
+        child: SlideTransition(
+          position: _slideAnimation!,
+          child: _buildContent(),
+        ),
+      )
+          : _buildContent(),
+    );
+  }
+
+  Widget _buildContent() {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTypeSelector(),
+              const SizedBox(height: 25),
+              _buildModernTextField(
+                controller: _descriptionController,
+                label: 'Açıklama',
+                icon: Icons.description,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Lütfen açıklama girin';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              _buildModernTextField(
+                controller: _amountController,
+                label: 'Tutar (₺)',
+                icon: Icons.attach_money,
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Lütfen tutar girin';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'Geçerli bir tutar girin';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              _buildDateSelector(),
+              const SizedBox(height: 25),
+              _buildCategorySection(),
+              const SizedBox(height: 30),
+              _buildSaveButton(),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildModernAppBar() {
+    return AppBar(
+      backgroundColor: const Color(0xFF1E1E2C),
+      elevation: 0,
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.add_circle, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 12),
+          const Text(
+            'Yeni İşlem',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 24,
+            ),
+          ),
+        ],
+      ),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Color(0xFFF59E0B)),
+        onPressed: () => Navigator.pop(context),
+      ),
+    );
+  }
+
+  Widget _buildTypeSelector() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.1),
+                Colors.white.withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.1),
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildTypeButton(
+                  'Gelir',
+                  'income',
+                  Icons.arrow_downward,
+                  const Color(0xFF00E676),
+                ),
+              ),
+              Expanded(
+                child: _buildTypeButton(
+                  'Gider',
+                  'expense',
+                  Icons.arrow_upward,
+                  const Color(0xFFFF5252),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeButton(String label, String type, IconData icon, Color color) {
+    final isSelected = _type == type;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _type = type;
+          _selectedCategory = null;
+          _isCategoriesExpanded = false;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(
+            colors: [color, color.withOpacity(0.7)],
+          )
+              : null,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: isSelected
+              ? [
+            BoxShadow(
+              color: color.withOpacity(0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ]
+              : null,
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+                fontSize: 18,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.1),
+                Colors.white.withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.1),
+            ),
+          ),
+          child: TextFormField(
+            controller: controller,
+            keyboardType: keyboardType,
+            validator: validator,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+            decoration: InputDecoration(
+              labelText: label,
+              labelStyle: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 14,
+              ),
+              prefixIcon: Icon(icon, color: const Color(0xFFF59E0B)),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(20),
+              errorStyle: const TextStyle(
+                color: Color(0xFFFF5252),
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateSelector() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.1),
+                Colors.white.withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.1),
+            ),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _selectedDate,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime.now(),
+                  builder: (context, child) {
+                    return Theme(
+                      data: ThemeData.dark().copyWith(
+                        colorScheme: const ColorScheme.dark(
+                          primary: Color(0xFFF59E0B),
+                          surface: Color(0xFF1E1E2C),
+                        ),
+                      ),
+                      child: child!,
+                    );
+                  },
+                );
+                if (picked != null) {
+                  setState(() {
+                    _selectedDate = picked;
+                  });
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today, color: Color(0xFFF59E0B)),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Tarih',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            DateFormat('dd MMMM yyyy', 'tr_TR').format(_selectedDate),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      color: Colors.white.withOpacity(0.5),
+                      size: 16,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategorySection() {
+    final categories = _categories[_type]!;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.1),
+                Colors.white.withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.1),
+            ),
+          ),
+          child: Column(
+            children: [
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
+                  onTap: () {
+                    setState(() {
+                      _isCategoriesExpanded = !_isCategoriesExpanded;
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.category,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Kategori',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              if (_selectedCategory != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    _selectedCategory!,
+                                    style: const TextStyle(
+                                      color: Color(0xFFF59E0B),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        AnimatedRotation(
+                          turns: _isCategoriesExpanded ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 300),
+                          child: Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Colors.white.withOpacity(0.7),
+                            size: 28,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                child: _isCategoriesExpanded
+                    ? Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1,
+                    ),
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categories[index];
+                      final isSelected = _selectedCategory == category['name'];
+
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedCategory = category['name'];
+                            _isCategoriesExpanded = false;
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          decoration: BoxDecoration(
+                            gradient: isSelected
+                                ? LinearGradient(
+                              colors: [
+                                category['color'],
+                                (category['color'] as Color).withOpacity(0.7),
+                              ],
+                            )
+                                : null,
+                            color: isSelected ? null : Colors.white.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isSelected
+                                  ? Colors.transparent
+                                  : Colors.white.withOpacity(0.1),
+                              width: 1,
+                            ),
+                            boxShadow: isSelected
+                                ? [
+                              BoxShadow(
+                                color: (category['color'] as Color).withOpacity(0.4),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                                : null,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                category['icon'],
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.white.withOpacity(0.7),
+                                size: 28,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                category['name'],
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.white.withOpacity(0.7),
+                                  fontSize: 12,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                )
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return Container(
+      width: double.infinity,
+      height: 60,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF59E0B).withOpacity(0.5),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: _isLoading ? null : _saveTransaction,
+          child: Center(
+            child: _isLoading
+                ? const SizedBox(
+              height: 24,
+              width: 24,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 3,
+              ),
+            )
+                : const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.save, color: Colors.black87, size: 24),
+                SizedBox(width: 12),
+                Text(
+                  'Kaydet',
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _saveTransaction() async {
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    // Rakamları temizle ve parse et
-    final cleanAmount = _amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
-    final amount = double.tryParse(cleanAmount);
-
-    if (amount == null || amount <= 0) {
-      _showError('Geçerli bir tutar girin');
+    if (_selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Lütfen bir kategori seçin'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
       return;
     }
 
@@ -87,10 +687,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     });
 
     final result = await _apiService.addTransaction(
+      type: _type,
+      amount: double.parse(_amountController.text),
+      category: _selectedCategory!,
       description: _descriptionController.text,
-      amount: amount,
-      type: _selectedType,
-      category: _selectedCategory,
     );
 
     setState(() {
@@ -99,360 +699,39 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
     if (result['success']) {
       if (mounted) {
-        Navigator.pop(context, true);
-      }
-    } else {
-      _showError(result['error']);
-    }
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1E1E2C),
-        elevation: 0,
-        title: const Text('Yeni İşlem'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Tip Seçimi (Gelir/Gider)
-            const Text(
-              'İşlem Tipi',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 15),
-            _buildTypeSelector(),
-            const SizedBox(height: 30),
-
-            // Açıklama
-            _buildTextField(
-              controller: _descriptionController,
-              label: 'Açıklama',
-              hint: 'Örn: Market alışverişi',
-              icon: Icons.description,
-            ),
-            const SizedBox(height: 20),
-
-            // Tutar
-            _buildAmountTextField(),
-            const SizedBox(height: 20),
-
-            // Kategori
-            const Text(
-              'Kategori',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 10),
-            _buildCategorySelector(),
-            const SizedBox(height: 40),
-
-            // Kaydet Butonu
-            _buildSaveButton(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTypeSelector() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildTypeCard(
-            'Gelir',
-            'income',
-            Icons.arrow_downward,
-            Colors.green,
-          ),
-        ),
-        const SizedBox(width: 15),
-        Expanded(
-          child: _buildTypeCard(
-            'Gider',
-            'expense',
-            Icons.arrow_upward,
-            Colors.red,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTypeCard(String title, String type, IconData icon, Color color) {
-    final isSelected = _selectedType == type;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedType = type;
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: isSelected
-              ? LinearGradient(
-            colors: [
-              color.withOpacity(0.6),
-              color.withOpacity(0.3),
-            ],
-          )
-              : LinearGradient(
-            colors: [
-              Colors.white.withOpacity(0.1),
-              Colors.white.withOpacity(0.05),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(
-            color: isSelected ? color : Colors.white.withOpacity(0.2),
-            width: 2,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.white : Colors.white54,
-              size: 40,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white54,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 10),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
-                ),
-              ),
-              child: TextField(
-                controller: controller,
-                keyboardType: keyboardType,
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-                decoration: InputDecoration(
-                  hintText: hint,
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                  prefixIcon: Icon(icon, color: Colors.white70),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAmountTextField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Tutar',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 10),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.only(left: 16, right: 8),
-                    child: Text(
-                      '₺',
-                      style: TextStyle(
-                        color: Colors.amber,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _amountController,
-                      keyboardType: TextInputType.number,
-                      style: const TextStyle(color: Colors.white, fontSize: 18),
-                      decoration: InputDecoration(
-                        hintText: '0',
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 14,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCategorySelector() {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: _categories.map((category) {
-        final isSelected = _selectedCategory == category;
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              _selectedCategory = category;
-            });
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? Colors.blue.withOpacity(0.3)
-                  : Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isSelected ? Colors.blue : Colors.white.withOpacity(0.2),
-                width: 1.5,
-              ),
-            ),
-            child: Text(
-              category,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white70,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('İşlem başarıyla eklendi'),
+            backgroundColor: Colors.green.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
         );
-      }).toList(),
-    );
-  }
-
-  Widget _buildSaveButton() {
-    return Container(
-      width: double.infinity,
-      height: 55,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFFFFD700),
-            Color(0xFFFFA500),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFFD700).withOpacity(0.5),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: _isLoading ? null : _addTransaction,
-          child: Center(
-            child: _isLoading
-                ? const CircularProgressIndicator(color: Colors.black)
-                : const Text(
-              'Kaydett',
-              style: TextStyle(
-                color: Colors.black87,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+        Navigator.pop(context, true);
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['error']),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
-        ),
-      ),
-    );
+        );
+      }
+    }
   }
 
   @override
   void dispose() {
     _descriptionController.dispose();
     _amountController.dispose();
+    _animationController?.dispose();
     super.dispose();
   }
 }
