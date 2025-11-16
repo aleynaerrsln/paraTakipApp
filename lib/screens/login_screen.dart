@@ -1,11 +1,10 @@
-// lib/screens/login_screen.dart
-import 'dart:ui';
+// lib/screens/login_screen.dart - LOCALIZED VERSION
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import '../services/api_service.dart';
-import '../widgets/animated_panda.dart';
-import '../widgets/lamp_light.dart';
+import '../l10n/app_localizations.dart';
 import 'dashboard_screen.dart';
-import 'forgot_password_screen.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,42 +15,328 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _apiService = ApiService();
   bool _isLoading = false;
-  bool _isPasswordVisible = false;
-  bool _isPasswordFocused = false;
-  bool _isLightOn = false;
-  bool _showForm = false;
-
+  bool _obscurePassword = true;
   late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
-    _passwordController.addListener(() {
-      setState(() {});
-    });
+    _setupAnimations();
+  }
 
+  void _setupAnimations() {
     _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
-      duration: const Duration(milliseconds: 600),
     );
 
-    // Ekran açıldığında animasyon başlat
-    Future.delayed(const Duration(milliseconds: 200), () {
-      setState(() {
-        _isLightOn = true;
-        _showForm = true;
-      });
-      _animationController.forward();
-    });
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.5),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _animationController.forward();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF0A0E21),
+              const Color(0xFF1E1E2C),
+              const Color(0xFF0A0E21),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.all(24),
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildLogo(),
+                        const SizedBox(height: 16),
+                        _buildTitle(l10n),
+                        const SizedBox(height: 48),
+                        _buildEmailField(l10n),
+                        const SizedBox(height: 20),
+                        _buildPasswordField(l10n),
+                        const SizedBox(height: 32),
+                        _buildLoginButton(l10n),
+                        const SizedBox(height: 24),
+                        _buildRegisterLink(l10n),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogo() {
+    return TweenAnimationBuilder(
+      duration: const Duration(milliseconds: 800),
+      tween: Tween<double>(begin: 0, end: 1),
+      curve: Curves.elasticOut,
+      builder: (context, double value, child) {
+        return Transform.scale(
+          scale: value,
+          child: child,
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFF59E0B).withOpacity(0.5),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.account_balance_wallet,
+          size: 64,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTitle(AppLocalizations l10n) {
+    return Column(
+      children: [
+        Text(
+          l10n.appName,
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            foreground: Paint()
+              ..shader = const LinearGradient(
+                colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+              ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          l10n.welcomeBack,
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.white.withOpacity(0.7),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmailField(AppLocalizations l10n) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+              width: 1.5,
+            ),
+          ),
+          child: TextFormField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: l10n.email,
+              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+              prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFFF59E0B)),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(20),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return l10n.enterEmail;
+              }
+              return null;
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPasswordField(AppLocalizations l10n) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+              width: 1.5,
+            ),
+          ),
+          child: TextFormField(
+            controller: _passwordController,
+            obscureText: _obscurePassword,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: l10n.password,
+              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+              prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFFF59E0B)),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.white.withOpacity(0.7),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(20),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return l10n.enterPassword;
+              }
+              return null;
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginButton(AppLocalizations l10n) {
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF59E0B).withOpacity(0.5),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: _isLoading ? null : _login,
+          child: Center(
+            child: _isLoading
+                ? const SizedBox(
+              height: 24,
+              width: 24,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2.5,
+              ),
+            )
+                : Text(
+              l10n.login,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRegisterLink(AppLocalizations l10n) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          l10n.dontHaveAccount,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 14,
+          ),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const RegisterScreen()),
+            );
+          },
+          child: Text(
+            l10n.registerNow,
+            style: const TextStyle(
+              color: Color(0xFFF59E0B),
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _login() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      _showError('Email ve şifre gerekli');
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
@@ -60,7 +345,7 @@ class _LoginScreenState extends State<LoginScreen>
     });
 
     final result = await _apiService.login(
-      email: _emailController.text,
+      email: _emailController.text.trim(),
       password: _passwordController.text,
     );
 
@@ -70,336 +355,22 @@ class _LoginScreenState extends State<LoginScreen>
 
     if (result['success']) {
       if (mounted) {
-        // Dashboard'a git
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => const DashboardScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const DashboardScreen()),
         );
       }
     } else {
-      _showError(result['error']);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['error']),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.center,
-            radius: 1.5,
-            colors: [
-              Color(0xFF222222),
-              Color(0xFF111111),
-            ],
-          ),
-        ),
-        child: Stack(
-          children: [
-            // Lamba Işığı Efekti
-            Positioned(
-              top: -50,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: AnimatedOpacity(
-                  opacity: _isLightOn ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 600),
-                  child: LampLight(isLightOn: _isLightOn),
-                ),
-              ),
-            ),
-
-            // Ana içerik
-            SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Panda ve Form - STACK İLE BİRLEŞTİRİLDİ
-                      AnimatedOpacity(
-                        opacity: _showForm ? 1.0 : 0.0,
-                        duration: const Duration(milliseconds: 800),
-                        child: AnimatedScale(
-                          scale: _showForm ? 1.0 : 0.8,
-                          duration: const Duration(milliseconds: 800),
-                          curve: Curves.easeOut,
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            alignment: Alignment.topCenter,
-                            children: [
-                              // Login Kartı (altta)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 30),
-                                child: _buildLoginCard(),
-                              ),
-
-                              // Panda (üstte, formun tam kenarında)
-                              Positioned(
-                                top: -60,
-                                child: _buildPandaAvatar(),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // Geri butonu
-            Positioned(
-              top: 40,
-              left: 20,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPandaAvatar() {
-    return SizedBox(
-      width: 180,
-      height: 180,
-      child: AnimatedPanda(
-        eyesClosed: _isPasswordFocused,
-      ),
-    );
-  }
-
-  Widget _buildLoginCard() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          width: 370,
-          padding: const EdgeInsets.all(35),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.07),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.12),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.6),
-                blurRadius: 60,
-                offset: const Offset(0, 25),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              // Başlık
-              const Text(
-                'HOŞ GELDİN',
-                style: TextStyle(
-                  color: Color(0xFFFFF5D7),
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 25),
-
-              // Email Input
-              _buildGlassTextField(
-                controller: _emailController,
-                label: 'Kullanıcı Adı:',
-                keyboardType: TextInputType.emailAddress,
-              ),
-
-              // Şifre Input
-              Focus(
-                onFocusChange: (hasFocus) {
-                  setState(() {
-                    _isPasswordFocused = hasFocus;
-                  });
-                },
-                child: _buildGlassTextField(
-                  controller: _passwordController,
-                  label: 'Şifre:',
-                  isPassword: true,
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // Giriş Butonu
-              _buildGradientButton(),
-
-              const SizedBox(height: 10),
-
-              // Şifremi Unuttum Linki
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ForgotPasswordScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    'Şifremi Unuttum?',
-                    style: TextStyle(
-                      color: Color(0xFFEEE2B9),
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // Kayıt Ol Linki
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Hesabınız yok mu? ',
-                    style: TextStyle(
-                      color: Color(0xFFEEE2B9),
-                      fontSize: 14,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(context, '/register');
-                    },
-                    child: const Text(
-                      'Kayıt Ol',
-                      style: TextStyle(
-                        color: Color(0xFFFFC93C),
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGlassTextField({
-    required TextEditingController controller,
-    required String label,
-    bool isPassword = false,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0xFFEEE2B9),
-            fontSize: 14,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.65),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: TextField(
-            controller: controller,
-            obscureText: isPassword && !_isPasswordVisible,
-            keyboardType: keyboardType,
-            style: const TextStyle(color: Color(0xFF333333), fontSize: 15),
-            decoration: InputDecoration(
-              suffixIcon: isPassword
-                  ? IconButton(
-                icon: Icon(
-                  _isPasswordVisible
-                      ? Icons.visibility
-                      : Icons.visibility_off,
-                  color: Colors.black54,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _isPasswordVisible = !_isPasswordVisible;
-                  });
-                },
-              )
-                  : null,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 13,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-
-  Widget _buildGradientButton() {
-    return Container(
-      width: double.infinity,
-      height: 50,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFFFFC93C),
-            Color(0xFFFFA500),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(10),
-          onTap: _isLoading ? null : _login,
-          child: Center(
-            child: _isLoading
-                ? const CircularProgressIndicator(
-              color: Color(0xFF2D2200),
-            )
-                : const Text(
-              'Giriş Yap',
-              style: TextStyle(
-                color: Color(0xFF2D2200),
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   @override

@@ -1,9 +1,10 @@
-// lib/screens/charts_screen.dart - FULL UPDATED VERSION
+// lib/screens/charts_screen.dart - LOCALIZED VERSION (TARIH FORMATLARI DÜZELTİLDİ)
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui';
 import '../services/api_service.dart';
+import '../l10n/app_localizations.dart';
 
 class ChartsScreen extends StatefulWidget {
   const ChartsScreen({super.key});
@@ -19,12 +20,10 @@ class _ChartsScreenState extends State<ChartsScreen>
   List<dynamic> _transactions = [];
   String _selectedFilter = 'month';
 
-  // Açma/Kapama State'leri
   bool _isPieChartExpanded = false;
   bool _isCategoryChartExpanded = false;
   bool _isTrendChartExpanded = false;
 
-  // ✅ NULL SAFETY İLE CONTROLLER'LAR
   AnimationController? _fadeController;
   AnimationController? _slideController;
   Animation<double>? _fadeAnimation;
@@ -88,7 +87,7 @@ class _ChartsScreenState extends State<ChartsScreen>
 
     for (var transaction in _transactions) {
       if (transaction['type'] == type) {
-        String category = transaction['category'] ?? 'Diğer';
+        String category = transaction['category'] ?? 'Other';
         categoryMap[category] =
             (categoryMap[category] ?? 0) + transaction['amount'].toDouble();
       }
@@ -105,57 +104,31 @@ class _ChartsScreenState extends State<ChartsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E21),
-      appBar: _buildModernAppBar(),
+      appBar: _buildModernAppBar(l10n),
       body: RefreshIndicator(
         onRefresh: _loadData,
         color: const Color(0xFFF59E0B),
         backgroundColor: const Color(0xFF1E1E2C),
         child: _isLoading
-            ? _buildLoadingState()
+            ? _buildLoadingState(l10n)
             : (_fadeAnimation != null && _slideAnimation != null
             ? FadeTransition(
           opacity: _fadeAnimation!,
           child: SlideTransition(
             position: _slideAnimation!,
-            child: _buildContent(),
+            child: _buildContent(l10n),
           ),
         )
-            : _buildContent()),
+            : _buildContent(l10n)),
       ),
     );
   }
 
-  Widget _buildContent() {
-    return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildModernFilterButtons(),
-                const SizedBox(height: 25),
-                _buildSummaryCards(),
-                const SizedBox(height: 30),
-                _buildPieChartCard(),
-                const SizedBox(height: 20),
-                _buildCategoryChartCard(),
-                const SizedBox(height: 20),
-                _buildTrendChartCard(),
-                const SizedBox(height: 100),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  PreferredSizeWidget _buildModernAppBar() {
+  PreferredSizeWidget _buildModernAppBar(AppLocalizations l10n) {
     return AppBar(
       backgroundColor: const Color(0xFF1E1E2C),
       elevation: 0,
@@ -172,9 +145,9 @@ class _ChartsScreenState extends State<ChartsScreen>
             child: const Icon(Icons.bar_chart, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
-          const Text(
-            'Grafikler',
-            style: TextStyle(
+          Text(
+            l10n.charts,
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 24,
@@ -189,7 +162,7 @@ class _ChartsScreenState extends State<ChartsScreen>
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -212,7 +185,7 @@ class _ChartsScreenState extends State<ChartsScreen>
           ),
           const SizedBox(height: 20),
           Text(
-            'Grafikler yükleniyor...',
+            l10n.loading,
             style: TextStyle(
               color: Colors.white.withOpacity(0.7),
               fontSize: 16,
@@ -223,12 +196,40 @@ class _ChartsScreenState extends State<ChartsScreen>
     );
   }
 
-  Widget _buildModernFilterButtons() {
+  Widget _buildContent(AppLocalizations l10n) {
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildModernFilterButtons(l10n),
+                const SizedBox(height: 25),
+                _buildSummaryCards(l10n),
+                const SizedBox(height: 30),
+                _buildPieChartCard(l10n),
+                const SizedBox(height: 20),
+                _buildCategoryChartCard(l10n),
+                const SizedBox(height: 20),
+                _buildTrendChartCard(l10n),
+                const SizedBox(height: 100),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModernFilterButtons(AppLocalizations l10n) {
     final filters = [
-      {'label': 'Bugün', 'value': 'today', 'icon': Icons.today},
-      {'label': 'Hafta', 'value': 'week', 'icon': Icons.date_range},
-      {'label': 'Ay', 'value': 'month', 'icon': Icons.calendar_month},
-      {'label': 'Tümü', 'value': 'all', 'icon': Icons.apps},
+      {'label': l10n.today, 'value': 'today', 'icon': Icons.today},
+      {'label': l10n.week, 'value': 'week', 'icon': Icons.date_range},
+      {'label': l10n.month, 'value': 'month', 'icon': Icons.calendar_month},
+      {'label': l10n.all, 'value': 'all', 'icon': Icons.apps},
     ];
 
     return SizedBox(
@@ -306,7 +307,7 @@ class _ChartsScreenState extends State<ChartsScreen>
     );
   }
 
-  Widget _buildSummaryCards() {
+  Widget _buildSummaryCards(AppLocalizations l10n) {
     final totalIncome = _getTotalAmount('income');
     final totalExpense = _getTotalAmount('expense');
     final balance = totalIncome - totalExpense;
@@ -315,7 +316,7 @@ class _ChartsScreenState extends State<ChartsScreen>
       children: [
         Expanded(
           child: _buildMiniSummaryCard(
-            'Gelir',
+            l10n.income,
             totalIncome,
             const Color(0xFF00E676),
             Icons.trending_up,
@@ -325,7 +326,7 @@ class _ChartsScreenState extends State<ChartsScreen>
         const SizedBox(width: 12),
         Expanded(
           child: _buildMiniSummaryCard(
-            'Gider',
+            l10n.expense,
             totalExpense,
             const Color(0xFFFF5252),
             Icons.trending_down,
@@ -335,7 +336,7 @@ class _ChartsScreenState extends State<ChartsScreen>
         const SizedBox(width: 12),
         Expanded(
           child: _buildMiniSummaryCard(
-            'Bakiye',
+            l10n.balance,
             balance,
             const Color(0xFFF59E0B),
             Icons.account_balance_wallet,
@@ -418,17 +419,17 @@ class _ChartsScreenState extends State<ChartsScreen>
     );
   }
 
-  Widget _buildPieChartCard() {
+  Widget _buildPieChartCard(AppLocalizations l10n) {
     final totalIncome = _getTotalAmount('income');
     final totalExpense = _getTotalAmount('expense');
     final total = totalIncome + totalExpense;
 
     if (total == 0) {
-      return _buildEmptyCard('Pasta Grafik', Icons.pie_chart);
+      return _buildEmptyCard(l10n.pieChart, Icons.pie_chart, l10n);
     }
 
     return _buildExpandableCard(
-      title: 'Gelir/Gider Dağılımı',
+      title: l10n.incomeExpenseDistribution,
       icon: Icons.pie_chart,
       isExpanded: _isPieChartExpanded,
       onToggle: () {
@@ -503,7 +504,7 @@ class _ChartsScreenState extends State<ChartsScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Toplam',
+                      l10n.total,
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.7),
                         fontSize: 14,
@@ -527,8 +528,8 @@ class _ChartsScreenState extends State<ChartsScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildLegendItem('Gelir', const Color(0xFF00E676), totalIncome),
-              _buildLegendItem('Gider', const Color(0xFFFF5252), totalExpense),
+              _buildLegendItem(l10n.income, const Color(0xFF00E676), totalIncome),
+              _buildLegendItem(l10n.expense, const Color(0xFFFF5252), totalExpense),
             ],
           ),
         ],
@@ -536,18 +537,18 @@ class _ChartsScreenState extends State<ChartsScreen>
     );
   }
 
-  Widget _buildCategoryChartCard() {
+  Widget _buildCategoryChartCard(AppLocalizations l10n) {
     final expenseCategories = _getCategoryData('expense');
 
     if (expenseCategories.isEmpty) {
-      return _buildEmptyCard('Kategori Analizi', Icons.category);
+      return _buildEmptyCard(l10n.categoryAnalysis, Icons.category, l10n);
     }
 
     final sortedCategories = expenseCategories.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
     return _buildExpandableCard(
-      title: 'Gider Kategorileri',
+      title: l10n.expenseCategories,
       icon: Icons.category,
       isExpanded: _isCategoryChartExpanded,
       onToggle: () {
@@ -674,18 +675,18 @@ class _ChartsScreenState extends State<ChartsScreen>
     );
   }
 
-  Widget _buildTrendChartCard() {
+  Widget _buildTrendChartCard(AppLocalizations l10n) {
     Map<String, double> dailyExpenses = {};
 
     for (int i = 6; i >= 0; i--) {
       final date = DateTime.now().subtract(Duration(days: i));
-      final dateKey = DateFormat('dd/MM').format(date);
+      final dateKey = DateFormat('dd/MM', Localizations.localeOf(context).languageCode).format(date); // ✅ DÜZELTİLDİ
       dailyExpenses[dateKey] = 0;
     }
 
     for (var transaction in _transactions) {
       final date = DateTime.parse(transaction['date']);
-      final dateKey = DateFormat('dd/MM').format(date);
+      final dateKey = DateFormat('dd/MM', Localizations.localeOf(context).languageCode).format(date); // ✅ DÜZELTİLDİ
 
       if (dailyExpenses.containsKey(dateKey) && transaction['type'] == 'expense') {
         dailyExpenses[dateKey] = dailyExpenses[dateKey]! + transaction['amount'].toDouble();
@@ -695,13 +696,13 @@ class _ChartsScreenState extends State<ChartsScreen>
     final hasData = dailyExpenses.values.any((value) => value > 0);
 
     if (!hasData) {
-      return _buildEmptyCard('Trend Analizi', Icons.trending_up);
+      return _buildEmptyCard(l10n.trendAnalysis, Icons.trending_up, l10n);
     }
 
     final maxValue = dailyExpenses.values.reduce((a, b) => a > b ? a : b);
 
     return _buildExpandableCard(
-      title: 'Haftalık Gider Trendi',
+      title: l10n.weeklyExpenseTrend,
       icon: Icons.trending_up,
       isExpanded: _isTrendChartExpanded,
       onToggle: () {
@@ -935,7 +936,7 @@ class _ChartsScreenState extends State<ChartsScreen>
     );
   }
 
-  Widget _buildEmptyCard(String title, IconData icon) {
+  Widget _buildEmptyCard(String title, IconData icon, AppLocalizations l10n) {
     return _buildExpandableCard(
       title: title,
       icon: icon,
@@ -960,7 +961,7 @@ class _ChartsScreenState extends State<ChartsScreen>
               ),
               const SizedBox(height: 16),
               Text(
-                'Yeterli veri yok',
+                l10n.insufficientData,
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.5),
                   fontSize: 16,

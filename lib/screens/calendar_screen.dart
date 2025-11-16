@@ -1,9 +1,10 @@
-// lib/screens/calendar_screen.dart - UPDATED WITH EXPAND/COLLAPSE
+// lib/screens/calendar_screen.dart - LOCALIZED VERSION (TARIH FORMATLARI DÜZELTİLDİ)
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui';
 import 'package:table_calendar/table_calendar.dart';
 import '../services/api_service.dart';
+import '../l10n/app_localizations.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -21,9 +22,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
   bool _isLoading = true;
   Map<String, dynamic> _monthlySummary = {};
 
-  // ✅ AÇMA/KAPAMA STATE'LERİ
-  bool _isSummaryExpanded = true;
-  bool _isDayTransactionsExpanded = true;
+  bool _isSummaryExpanded = false;
+  bool _isDayTransactionsExpanded = false;
 
   @override
   void initState() {
@@ -95,34 +95,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E21),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1E1E2C),
-        elevation: 0,
-        title: const Text(
-          'Takvim',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFFF59E0B)),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      appBar: _buildModernAppBar(l10n),
       body: RefreshIndicator(
         onRefresh: _loadMonthlyData,
         color: const Color(0xFFF59E0B),
         backgroundColor: const Color(0xFF1E1E2C),
         child: _isLoading
-            ? const Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFFF59E0B),
-          ),
-        )
+            ? _buildLoadingState(l10n)
             : CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
@@ -132,11 +115,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildMonthlySummaryCard(),
+                    _buildMonthlySummaryCard(l10n),
                     const SizedBox(height: 20),
-                    _buildModernCalendar(),
+                    _buildModernCalendar(l10n),
                     const SizedBox(height: 20),
-                    _buildDayTransactions(),
+                    _buildDayTransactions(l10n),
                   ],
                 ),
               ),
@@ -147,8 +130,47 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  // ✅ AYLIK ÖZET KARTI - AÇMA/KAPAMA İLE
-  Widget _buildMonthlySummaryCard() {
+  PreferredSizeWidget _buildModernAppBar(AppLocalizations l10n) {
+    return AppBar(
+      backgroundColor: const Color(0xFF1E1E2C),
+      elevation: 0,
+      title: Text(
+        l10n.calendar,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 24,
+        ),
+      ),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Color(0xFFF59E0B)),
+        onPressed: () => Navigator.pop(context),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState(AppLocalizations l10n) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(
+            color: Color(0xFFF59E0B),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            l10n.loading,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMonthlySummaryCard(AppLocalizations l10n) {
     return TweenAnimationBuilder(
       duration: const Duration(milliseconds: 800),
       tween: Tween<double>(begin: 0, end: 1),
@@ -184,7 +206,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
             child: Column(
               children: [
-                // ✅ BAŞLIK - TIKLANINCA AÇILIP KAPANIYOR
                 Material(
                   color: Colors.transparent,
                   child: InkWell(
@@ -213,7 +234,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              DateFormat('MMMM yyyy', 'tr_TR').format(_focusedDay),
+                              DateFormat('MMMM yyyy', Localizations.localeOf(context).languageCode).format(_focusedDay), // ✅ DÜZELTİLDİ
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 20,
@@ -221,7 +242,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               ),
                             ),
                           ),
-                          // ✅ OK İKONU
                           AnimatedRotation(
                             turns: _isSummaryExpanded ? 0.5 : 0,
                             duration: const Duration(milliseconds: 300),
@@ -236,8 +256,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     ),
                   ),
                 ),
-
-                // ✅ İÇERİK - AÇIKSA GÖSTER
                 AnimatedSize(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
@@ -250,7 +268,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           children: [
                             Expanded(
                               child: _buildSummaryItem(
-                                'Gelir',
+                                l10n.income,
                                 _monthlySummary['income']?.toDouble() ?? 0,
                                 const Color(0xFF00E676),
                                 Icons.arrow_downward,
@@ -259,7 +277,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: _buildSummaryItem(
-                                'Gider',
+                                l10n.expense,
                                 _monthlySummary['expense']?.toDouble() ?? 0,
                                 const Color(0xFFFF5252),
                                 Icons.arrow_upward,
@@ -269,7 +287,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         ),
                         const SizedBox(height: 12),
                         _buildSummaryItem(
-                          'Bakiye',
+                          l10n.balance,
                           _monthlySummary['balance']?.toDouble() ?? 0,
                           const Color(0xFFF59E0B),
                           Icons.account_balance_wallet,
@@ -327,7 +345,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Widget _buildModernCalendar() {
+  Widget _buildModernCalendar(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF1E1E2C),
@@ -362,7 +380,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           _loadMonthlyData();
         },
         eventLoader: _getEventsForDay,
-        locale: 'tr_TR',
+        locale: Localizations.localeOf(context).languageCode, // ✅ DÜZELTİLDİ
         headerStyle: HeaderStyle(
           formatButtonVisible: true,
           titleCentered: true,
@@ -448,8 +466,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  // ✅ GÜNLÜK İŞLEMLER - AÇMA/KAPAMA İLE
-  Widget _buildDayTransactions() {
+  Widget _buildDayTransactions(AppLocalizations l10n) {
     if (_selectedDay == null) {
       return const SizedBox.shrink();
     }
@@ -459,7 +476,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ✅ BAŞLIK - TIKLANINCA AÇILIP KAPANIYOR
         Material(
           color: Colors.transparent,
           child: InkWell(
@@ -498,7 +514,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      DateFormat('d MMMM yyyy', 'tr_TR').format(_selectedDay!),
+                      DateFormat('d MMMM yyyy', Localizations.localeOf(context).languageCode).format(_selectedDay!), // ✅ DÜZELTİLDİ
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -522,7 +538,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ),
                     ),
                   const SizedBox(width: 12),
-                  // ✅ OK İKONU
                   AnimatedRotation(
                     turns: _isDayTransactionsExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 300),
@@ -537,8 +552,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
           ),
         ),
-
-        // ✅ İÇERİK - AÇIKSA GÖSTER
         AnimatedSize(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
@@ -565,7 +578,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Bu günde işlem yok',
+                      l10n.noEvents,
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.5),
                         fontSize: 16,
@@ -655,7 +668,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    transaction['category'] ?? 'Diğer',
+                                    transaction['category'] ?? l10n.other,
                                     style: TextStyle(
                                       color: Colors.white.withOpacity(0.6),
                                       fontSize: 12,

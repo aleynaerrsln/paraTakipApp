@@ -387,12 +387,14 @@ class ApiService {
         final data = jsonDecode(response.body);
         return {'success': true, 'data': data};
       } else {
-        return {'success': false, 'error': 'Kullanıcıı bilgisi alınamadı'};
+        return {'success': false, 'error': 'Kullanıcı bilgisi alınamadı'};
       }
     } catch (e) {
       return {'success': false, 'error': 'Bağlantı hatası: $e'};
     }
   }
+
+  // Şifremi unuttum
   Future<Map<String, dynamic>> forgotPassword({
     required String email,
   }) async {
@@ -446,8 +448,108 @@ class ApiService {
     }
   }
 
+  // ✅ PROFİL METODLARı
 
+  // Profil bilgilerini al (getUserInfo() metodunu kullan)
+  Future<Map<String, dynamic>> getUserProfile() async {
+    return await getUserInfo();
+  }
 
+  // Profil güncelle
+  Future<Map<String, dynamic>> updateProfile({
+    String? name,
+    String? email,
+  }) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return {'success': false, 'error': 'Token bulunamadı'};
+      }
 
+      final response = await http.put(
+        Uri.parse('$baseUrl/auth/profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          if (name != null) 'name': name,
+          if (email != null) 'email': email,
+        }),
+      );
 
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {'success': true, 'data': data};
+      } else {
+        final data = jsonDecode(response.body);
+        return {'success': false, 'error': data['error'] ?? 'Profil güncellenemedi'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': 'Bağlantı hatası: $e'};
+    }
+  }
+
+  // Şifre değiştir
+  Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return {'success': false, 'error': 'Token bulunamadı'};
+      }
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/auth/change-password'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'currentPassword': currentPassword,
+          'newPassword': newPassword,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return {'success': true, 'message': 'Şifre başarıyla değiştirildi'};
+      } else {
+        final data = jsonDecode(response.body);
+        return {'success': false, 'error': data['error'] ?? 'Şifre değiştirilemedi'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': 'Bağlantı hatası: $e'};
+    }
+  }
+
+  // Hesabı sil
+  Future<Map<String, dynamic>> deleteAccount() async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return {'success': false, 'error': 'Token bulunamadı'};
+      }
+
+      final response = await http.delete(
+        Uri.parse('$baseUrl/auth/account'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        await deleteToken();
+        return {'success': true, 'message': 'Hesap başarıyla silindi'};
+      } else {
+        final data = jsonDecode(response.body);
+        return {'success': false, 'error': data['error'] ?? 'Hesap silinemedi'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': 'Bağlantı hatası: $e'};
+    }
+  }
 }

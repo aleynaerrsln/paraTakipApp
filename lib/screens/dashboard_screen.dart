@@ -1,13 +1,15 @@
-// lib/screens/dashboard_screen.dart - UPDATED VERSION
+// lib/screens/dashboard_screen.dart - HATA DÜZELTİLDİ
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui';
 import '../services/api_service.dart';
+import '../l10n/app_localizations.dart';
 import 'add_transaction_screen.dart';
 import 'edit_transaction_screen.dart';
 import 'calendar_screen.dart';
 import 'charts_screen.dart';
 import 'statistics_screen.dart';
+import 'profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -26,10 +28,11 @@ class _DashboardScreenState extends State<DashboardScreen>
   String _userName = '';
   bool _isTransactionsExpanded = true;
 
-  late AnimationController _fadeController;
-  late AnimationController _scaleController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
+  // ✅ NULLABLE YAPILDI
+  AnimationController? _fadeController;
+  AnimationController? _scaleController;
+  Animation<double>? _fadeAnimation;
+  Animation<double>? _scaleAnimation;
 
   @override
   void initState() {
@@ -51,15 +54,15 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
+      CurvedAnimation(parent: _fadeController!, curve: Curves.easeOut),
     );
 
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.easeOutBack),
+      CurvedAnimation(parent: _scaleController!, curve: Curves.easeOutBack),
     );
 
-    _fadeController.forward();
-    _scaleController.forward();
+    _fadeController!.forward();
+    _scaleController!.forward();
   }
 
   Future<void> _loadData() async {
@@ -116,6 +119,8 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E21),
       body: RefreshIndicator(
@@ -125,52 +130,73 @@ class _DashboardScreenState extends State<DashboardScreen>
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            _buildModernAppBar(),
+            _buildModernAppBar(l10n),
             SliverPadding(
               padding: const EdgeInsets.all(20),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  FadeTransition(
-                    opacity: _fadeAnimation,
+                  // ✅ NULL CHECK EKLENDI
+                  (_fadeAnimation != null && _scaleAnimation != null)
+                      ? FadeTransition(
+                    opacity: _fadeAnimation!,
                     child: ScaleTransition(
-                      scale: _scaleAnimation,
+                      scale: _scaleAnimation!,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildWelcomeBanner(),
+                          _buildWelcomeBanner(l10n),
                           const SizedBox(height: 25),
-                          _buildModernFilterButtons(),
+                          _buildModernFilterButtons(l10n),
                           const SizedBox(height: 25),
-                          _buildModernSummaryCards(),
+                          _buildModernSummaryCards(l10n),
                           const SizedBox(height: 35),
-                          _buildSectionHeader('Son İşlemler', Icons.receipt_long),
+                          _buildSectionHeader(l10n.recentTransactions, Icons.receipt_long),
                           const SizedBox(height: 15),
                           _isLoading
                               ? _buildLoadingState()
                               : (_isTransactionsExpanded
-                              ? _buildModernTransactionsList()
+                              ? _buildModernTransactionsList(l10n)
                               : _buildCollapsedView()),
                           const SizedBox(height: 100),
                         ],
                       ),
                     ),
-                  ),
+                  )
+                      : const SizedBox.shrink(),
                 ]),
               ),
             ),
           ],
         ),
       ),
-      floatingActionButton: _buildModernFAB(),
+      floatingActionButton: _buildModernFAB(l10n),
     );
   }
 
-  Widget _buildModernAppBar() {
+  Widget _buildModernAppBar(AppLocalizations l10n) {
     return SliverAppBar(
       expandedHeight: 120,
       floating: false,
       pinned: true,
       backgroundColor: Colors.transparent,
+      leading: IconButton(
+        icon: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+            ),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.person, color: Colors.white, size: 20),
+        ),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfileScreen()),
+          );
+        },
+      ),
       flexibleSpace: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -185,7 +211,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         child: FlexibleSpaceBar(
           centerTitle: false,
           title: Text(
-            'PARA TAKİP',
+            l10n.appName.toUpperCase(),
             style: TextStyle(
               letterSpacing: 3,
               fontWeight: FontWeight.bold,
@@ -252,7 +278,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildWelcomeBanner() {
+  Widget _buildWelcomeBanner(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -290,7 +316,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _userName.isEmpty ? 'Hoş Geldin!' : 'Hoş Geldin,',
+                  _userName.isEmpty ? l10n.welcomeBack : l10n.welcomeBack + ',',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.7),
                     fontSize: 14,
@@ -298,7 +324,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _userName.isEmpty ? 'Finanslarını Yönet' : _userName,
+                  _userName.isEmpty ? l10n.dashboard : _userName,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 22,
@@ -313,12 +339,12 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildModernFilterButtons() {
+  Widget _buildModernFilterButtons(AppLocalizations l10n) {
     final filters = [
-      {'label': 'Tümü', 'value': 'all', 'icon': Icons.apps},
-      {'label': 'Bugün', 'value': 'today', 'icon': Icons.today},
-      {'label': 'Hafta', 'value': 'week', 'icon': Icons.date_range},
-      {'label': 'Ay', 'value': 'month', 'icon': Icons.calendar_month},
+      {'label': l10n.all, 'value': 'all', 'icon': Icons.apps},
+      {'label': l10n.today, 'value': 'today', 'icon': Icons.today},
+      {'label': l10n.week, 'value': 'week', 'icon': Icons.date_range},
+      {'label': l10n.month, 'value': 'month', 'icon': Icons.calendar_month},
     ];
 
     return SizedBox(
@@ -357,9 +383,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                       color: isSelected ? null : Colors.white.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isSelected
-                            ? Colors.transparent
-                            : Colors.white.withOpacity(0.1),
+                        color: isSelected ? Colors.transparent : Colors.white.withOpacity(0.1),
                         width: 1,
                       ),
                       boxShadow: isSelected
@@ -400,11 +424,11 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildModernSummaryCards() {
+  Widget _buildModernSummaryCards(AppLocalizations l10n) {
     return Column(
       children: [
         _buildGlassmorphicSummaryCard(
-          'Toplam Gelir',
+          l10n.income,
           _summary['totalIncome']?.toDouble() ?? 0,
           Icons.trending_up,
           const Color(0xFF00E676),
@@ -412,7 +436,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
         const SizedBox(height: 16),
         _buildGlassmorphicSummaryCard(
-          'Toplam Gider',
+          l10n.expense,
           _summary['totalExpense']?.toDouble() ?? 0,
           Icons.trending_down,
           const Color(0xFFFF5252),
@@ -420,7 +444,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
         const SizedBox(height: 16),
         _buildGlassmorphicSummaryCard(
-          'Bakiye',
+          l10n.balance,
           _summary['balance']?.toDouble() ?? 0,
           Icons.account_balance_wallet,
           const Color(0xFFF59E0B),
@@ -624,7 +648,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     return const SizedBox.shrink();
   }
 
-  Widget _buildModernTransactionsList() {
+  Widget _buildModernTransactionsList(AppLocalizations l10n) {
     if (_recentTransactions.isEmpty) {
       return Center(
         child: Column(
@@ -644,7 +668,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Henüz işlem yok',
+              l10n.noTransactions,
               style: TextStyle(
                 color: Colors.white.withOpacity(0.5),
                 fontSize: 16,
@@ -676,7 +700,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             );
           },
           child: GestureDetector(
-            onTap: () => _showTransactionOptions(transaction),
+            onTap: () => _showTransactionOptions(transaction, l10n),
             child: Container(
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
@@ -697,7 +721,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
-                  onTap: () => _showTransactionOptions(transaction),
+                  onTap: () => _showTransactionOptions(transaction, l10n),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Row(
@@ -720,9 +744,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                           ),
                           child: Icon(
                             isIncome ? Icons.arrow_downward : Icons.arrow_upward,
-                            color: isIncome
-                                ? const Color(0xFF00E676)
-                                : const Color(0xFFFF5252),
+                            color: isIncome ? const Color(0xFF00E676) : const Color(0xFFFF5252),
                             size: 22,
                           ),
                         ),
@@ -752,7 +774,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
-                                      transaction['category'] ?? 'Diğer',
+                                      transaction['category'] ?? l10n.other,
                                       style: TextStyle(
                                         color: Colors.white.withOpacity(0.6),
                                         fontSize: 12,
@@ -762,9 +784,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                   const SizedBox(width: 8),
                                   Text(
                                     transaction['date'] != null
-                                        ? transaction['date']
-                                        .toString()
-                                        .substring(0, 10)
+                                        ? transaction['date'].toString().substring(0, 10)
                                         : '',
                                     style: TextStyle(
                                       color: Colors.white.withOpacity(0.4),
@@ -780,9 +800,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                         Text(
                           '${isIncome ? '+' : '-'}₺${_formatCurrency(transaction['amount'].toDouble())}',
                           style: TextStyle(
-                            color: isIncome
-                                ? const Color(0xFF00E676)
-                                : const Color(0xFFFF5252),
+                            color: isIncome ? const Color(0xFF00E676) : const Color(0xFFFF5252),
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -799,7 +817,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildModernFAB() {
+  Widget _buildModernFAB(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
@@ -829,9 +847,9 @@ class _DashboardScreenState extends State<DashboardScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         icon: const Icon(Icons.add, color: Colors.black87),
-        label: const Text(
-          'İşlem Ekle',
-          style: TextStyle(
+        label: Text(
+          l10n.addTransaction,
+          style: const TextStyle(
             color: Colors.black87,
             fontWeight: FontWeight.bold,
             fontSize: 16,
@@ -841,7 +859,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  void _showTransactionOptions(Map<String, dynamic> transaction) {
+  void _showTransactionOptions(Map<String, dynamic> transaction, AppLocalizations l10n) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -892,7 +910,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                   const SizedBox(height: 24),
                   _buildBottomSheetOption(
                     Icons.edit,
-                    'Düzenle',
+                    l10n.edit,
                     Colors.blue,
                         () async {
                       Navigator.pop(context);
@@ -912,11 +930,11 @@ class _DashboardScreenState extends State<DashboardScreen>
                   const SizedBox(height: 12),
                   _buildBottomSheetOption(
                     Icons.delete,
-                    'Sil',
+                    l10n.delete,
                     Colors.red,
                         () {
                       Navigator.pop(context);
-                      _confirmDelete(transaction['_id']);
+                      _confirmDelete(transaction['_id'], l10n);
                     },
                   ),
                   const SizedBox(height: 12),
@@ -968,7 +986,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Future<void> _confirmDelete(String transactionId) async {
+  Future<void> _confirmDelete(String transactionId, AppLocalizations l10n) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -977,20 +995,20 @@ class _DashboardScreenState extends State<DashboardScreen>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: const Text(
-            'İşlem Silinecek',
-            style: TextStyle(color: Colors.white),
+          title: Text(
+            l10n.delete,
+            style: const TextStyle(color: Colors.white),
           ),
-          content: const Text(
-            'Bu işlemi silmek istediğinize emin misiniz?',
-            style: TextStyle(color: Colors.white70),
+          content: Text(
+            l10n.deleteAccountConfirm,
+            style: const TextStyle(color: Colors.white70),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text(
-                'İptal',
-                style: TextStyle(color: Colors.white70),
+              child: Text(
+                l10n.cancel,
+                style: const TextStyle(color: Colors.white70),
               ),
             ),
             Container(
@@ -1002,9 +1020,9 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
               child: TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text(
-                  'Sil',
-                  style: TextStyle(color: Colors.white),
+                child: Text(
+                  l10n.delete,
+                  style: const TextStyle(color: Colors.white),
                 ),
               ),
             ),
@@ -1014,17 +1032,17 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
 
     if (confirm == true) {
-      _deleteTransaction(transactionId);
+      _deleteTransaction(transactionId, l10n);
     }
   }
 
-  Future<void> _deleteTransaction(String transactionId) async {
+  Future<void> _deleteTransaction(String transactionId, AppLocalizations l10n) async {
     final result = await _apiService.deleteTransaction(transactionId);
 
     if (result['success']) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('İşlem silindi'),
+          content: Text(l10n.transactionDeleted),
           backgroundColor: Colors.green.shade700,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -1040,8 +1058,8 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   void dispose() {
-    _fadeController.dispose();
-    _scaleController.dispose();
+    _fadeController?.dispose();
+    _scaleController?.dispose();
     super.dispose();
   }
 }

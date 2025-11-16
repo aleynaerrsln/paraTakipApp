@@ -1,8 +1,9 @@
-// lib/screens/add_transaction_screen.dart - COMPLETE FIXED VERSION
+// lib/screens/add_transaction_screen.dart - LOCALIZED VERSION
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui';
 import '../services/api_service.dart';
+import '../l10n/app_localizations.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -28,27 +29,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
   Animation<double>? _fadeAnimation;
   Animation<Offset>? _slideAnimation;
 
-  final Map<String, List<Map<String, dynamic>>> _categories = {
-    'income': [
-      {'name': 'Maaş', 'icon': Icons.payments, 'color': Color(0xFF00E676)},
-      {'name': 'Yatırım', 'icon': Icons.trending_up, 'color': Color(0xFF00BFA5)},
-      {'name': 'Freelance', 'icon': Icons.work, 'color': Color(0xFF1DE9B6)},
-      {'name': 'Satış', 'icon': Icons.store, 'color': Color(0xFF64FFDA)},
-      {'name': 'Hediye', 'icon': Icons.card_giftcard, 'color': Color(0xFF69F0AE)},
-      {'name': 'Diğer', 'icon': Icons.more_horiz, 'color': Color(0xFF76FF03)},
-    ],
-    'expense': [
-      {'name': 'Yemek', 'icon': Icons.restaurant, 'color': Color(0xFFFF5252)},
-      {'name': 'Ulaşım', 'icon': Icons.directions_car, 'color': Color(0xFFFF1744)},
-      {'name': 'Market', 'icon': Icons.shopping_cart, 'color': Color(0xFFFF6E40)},
-      {'name': 'Eğlence', 'icon': Icons.sports_esports, 'color': Color(0xFFFF9100)},
-      {'name': 'Faturalar', 'icon': Icons.receipt, 'color': Color(0xFFFFAB40)},
-      {'name': 'Sağlık', 'icon': Icons.local_hospital, 'color': Color(0xFFFF6D00)},
-      {'name': 'Eğitim', 'icon': Icons.school, 'color': Color(0xFFFF3D00)},
-      {'name': 'Giyim', 'icon': Icons.checkroom, 'color': Color(0xFFDD2C00)},
-      {'name': 'Diğer', 'icon': Icons.more_horiz, 'color': Color(0xFFD50000)},
-    ],
-  };
+  Map<String, List<Map<String, dynamic>>>? _categories;
 
   @override
   void initState() {
@@ -76,77 +57,51 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     _animationController!.forward();
   }
 
+  Map<String, List<Map<String, dynamic>>> _getCategories(AppLocalizations l10n) {
+    return {
+      'income': [
+        {'name': l10n.salary, 'icon': Icons.payments, 'color': Color(0xFF00E676)},
+        {'name': l10n.investment, 'icon': Icons.trending_up, 'color': Color(0xFF00BFA5)},
+        {'name': l10n.freelance, 'icon': Icons.work, 'color': Color(0xFF1DE9B6)},
+        {'name': l10n.sales, 'icon': Icons.store, 'color': Color(0xFF64FFDA)},
+        {'name': l10n.gift, 'icon': Icons.card_giftcard, 'color': Color(0xFF69F0AE)},
+        {'name': l10n.other, 'icon': Icons.more_horiz, 'color': Color(0xFF76FF03)},
+      ],
+      'expense': [
+        {'name': l10n.food, 'icon': Icons.restaurant, 'color': Color(0xFFFF5252)},
+        {'name': l10n.transport, 'icon': Icons.directions_car, 'color': Color(0xFFFF1744)},
+        {'name': l10n.shopping, 'icon': Icons.shopping_cart, 'color': Color(0xFFFF6E40)},
+        {'name': l10n.entertainment, 'icon': Icons.sports_esports, 'color': Color(0xFFFF9100)},
+        {'name': l10n.bills, 'icon': Icons.receipt, 'color': Color(0xFFFFAB40)},
+        {'name': l10n.health, 'icon': Icons.local_hospital, 'color': Color(0xFFFF6D00)},
+        {'name': l10n.education, 'icon': Icons.school, 'color': Color(0xFFFF3D00)},
+        {'name': l10n.clothing, 'icon': Icons.checkroom, 'color': Color(0xFFDD2C00)},
+        {'name': l10n.other, 'icon': Icons.more_horiz, 'color': Color(0xFFD50000)},
+      ],
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    _categories = _getCategories(l10n);
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E21),
-      appBar: _buildModernAppBar(),
+      appBar: _buildModernAppBar(l10n),
       body: (_fadeAnimation != null && _slideAnimation != null)
           ? FadeTransition(
         opacity: _fadeAnimation!,
         child: SlideTransition(
           position: _slideAnimation!,
-          child: _buildContent(),
+          child: _buildContent(l10n),
         ),
       )
-          : _buildContent(),
+          : _buildContent(l10n),
     );
   }
 
-  Widget _buildContent() {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildTypeSelector(),
-              const SizedBox(height: 25),
-              _buildModernTextField(
-                controller: _descriptionController,
-                label: 'Açıklama',
-                icon: Icons.description,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Lütfen açıklama girin';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              _buildModernTextField(
-                controller: _amountController,
-                label: 'Tutar (₺)',
-                icon: Icons.attach_money,
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Lütfen tutar girin';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Geçerli bir tutar girin';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              _buildDateSelector(),
-              const SizedBox(height: 25),
-              _buildCategorySection(),
-              const SizedBox(height: 30),
-              _buildSaveButton(),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  PreferredSizeWidget _buildModernAppBar() {
+  PreferredSizeWidget _buildModernAppBar(AppLocalizations l10n) {
     return AppBar(
       backgroundColor: const Color(0xFF1E1E2C),
       elevation: 0,
@@ -163,9 +118,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
             child: const Icon(Icons.add_circle, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
-          const Text(
-            'Yeni İşlem',
-            style: TextStyle(
+          Text(
+            l10n.newTransaction,
+            style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontSize: 24,
@@ -180,7 +135,62 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     );
   }
 
-  Widget _buildTypeSelector() {
+  Widget _buildContent(AppLocalizations l10n) {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTypeSelector(l10n),
+              const SizedBox(height: 25),
+              _buildModernTextField(
+                controller: _descriptionController,
+                label: l10n.description,
+                icon: Icons.description,
+                l10n: l10n,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return l10n.enterDescription;
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              _buildModernTextField(
+                controller: _amountController,
+                label: l10n.amount + ' (₺)',
+                icon: Icons.attach_money,
+                l10n: l10n,
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return l10n.enterAmount;
+                  }
+                  if (double.tryParse(value) == null) {
+                    return l10n.enterValidAmount;
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              _buildDateSelector(l10n),
+              const SizedBox(height: 25),
+              _buildCategorySection(l10n),
+              const SizedBox(height: 30),
+              _buildSaveButton(l10n),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeSelector(AppLocalizations l10n) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -204,7 +214,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
             children: [
               Expanded(
                 child: _buildTypeButton(
-                  'Gelir',
+                  l10n.income,
                   'income',
                   Icons.arrow_downward,
                   const Color(0xFF00E676),
@@ -212,7 +222,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
               ),
               Expanded(
                 child: _buildTypeButton(
-                  'Gider',
+                  l10n.expense,
                   'expense',
                   Icons.arrow_upward,
                   const Color(0xFFFF5252),
@@ -282,6 +292,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     required TextEditingController controller,
     required String label,
     required IconData icon,
+    required AppLocalizations l10n,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
   }) {
@@ -329,7 +340,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     );
   }
 
-  Widget _buildDateSelector() {
+  Widget _buildDateSelector(AppLocalizations l10n) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
@@ -388,7 +399,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Tarih',
+                            l10n.date,
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.7),
                               fontSize: 14,
@@ -421,8 +432,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     );
   }
 
-  Widget _buildCategorySection() {
-    final categories = _categories[_type]!;
+  Widget _buildCategorySection(AppLocalizations l10n) {
+    final categories = _categories![_type]!;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
@@ -479,9 +490,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Kategori',
-                                style: TextStyle(
+                              Text(
+                                l10n.category,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -609,7 +620,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     );
   }
 
-  Widget _buildSaveButton() {
+  Widget _buildSaveButton(AppLocalizations l10n) {
     return Container(
       width: double.infinity,
       height: 60,
@@ -630,7 +641,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: _isLoading ? null : _saveTransaction,
+          onTap: _isLoading ? null : () => _saveTransaction(l10n),
           child: Center(
             child: _isLoading
                 ? const SizedBox(
@@ -641,14 +652,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
                 strokeWidth: 3,
               ),
             )
-                : const Row(
+                : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.save, color: Colors.black87, size: 24),
-                SizedBox(width: 12),
+                const Icon(Icons.save, color: Colors.black87, size: 24),
+                const SizedBox(width: 12),
                 Text(
-                  'Kaydet',
-                  style: TextStyle(
+                  l10n.save,
+                  style: const TextStyle(
                     color: Colors.black87,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -663,7 +674,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     );
   }
 
-  Future<void> _saveTransaction() async {
+  Future<void> _saveTransaction(AppLocalizations l10n) async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -671,7 +682,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
     if (_selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Lütfen bir kategori seçin'),
+          content: Text(l10n.selectCategoryError),
           backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -701,7 +712,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('İşlem başarıyla eklendi'),
+            content: Text(l10n.transactionAdded),
             backgroundColor: Colors.green.shade700,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(

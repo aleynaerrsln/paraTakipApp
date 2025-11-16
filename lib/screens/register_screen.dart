@@ -1,6 +1,9 @@
-// lib/screens/register_screen.dart
+// lib/screens/register_screen.dart - LOCALIZED VERSION
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import '../services/api_service.dart';
+import '../l10n/app_localizations.dart';
+import 'dashboard_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -9,38 +12,366 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
-  final _apiService = ApiService();
+class _RegisterScreenState extends State<RegisterScreen>
+    with SingleTickerProviderStateMixin {
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+  final _apiService = ApiService();
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupAnimations();
+  }
+
+  void _setupAnimations() {
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.5),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _animationController.forward();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF0A0E21),
+              const Color(0xFF1E1E2C),
+              const Color(0xFF0A0E21),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.all(24),
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildLogo(),
+                        const SizedBox(height: 16),
+                        _buildTitle(l10n),
+                        const SizedBox(height: 48),
+                        _buildNameField(l10n),
+                        const SizedBox(height: 20),
+                        _buildEmailField(l10n),
+                        const SizedBox(height: 20),
+                        _buildPasswordField(l10n),
+                        const SizedBox(height: 32),
+                        _buildRegisterButton(l10n),
+                        const SizedBox(height: 24),
+                        _buildLoginLink(l10n),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogo() {
+    return TweenAnimationBuilder(
+      duration: const Duration(milliseconds: 800),
+      tween: Tween<double>(begin: 0, end: 1),
+      curve: Curves.elasticOut,
+      builder: (context, double value, child) {
+        return Transform.scale(
+          scale: value,
+          child: child,
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFF59E0B).withOpacity(0.5),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.person_add,
+          size: 64,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTitle(AppLocalizations l10n) {
+    return Column(
+      children: [
+        Text(
+          l10n.register,
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            foreground: Paint()
+              ..shader = const LinearGradient(
+                colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+              ).createShader(const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          l10n.registerNow,
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.white.withOpacity(0.7),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNameField(AppLocalizations l10n) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+              width: 1.5,
+            ),
+          ),
+          child: TextFormField(
+            controller: _nameController,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: l10n.name,
+              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+              prefixIcon: const Icon(Icons.person_outline, color: Color(0xFFF59E0B)),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(20),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return l10n.enterName;
+              }
+              return null;
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmailField(AppLocalizations l10n) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+              width: 1.5,
+            ),
+          ),
+          child: TextFormField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: l10n.email,
+              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+              prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFFF59E0B)),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(20),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return l10n.enterEmail;
+              }
+              return null;
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPasswordField(AppLocalizations l10n) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+              width: 1.5,
+            ),
+          ),
+          child: TextFormField(
+            controller: _passwordController,
+            obscureText: _obscurePassword,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: l10n.password,
+              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+              prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFFF59E0B)),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.white.withOpacity(0.7),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(20),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return l10n.enterPassword;
+              }
+              return null;
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRegisterButton(AppLocalizations l10n) {
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF59E0B).withOpacity(0.5),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: _isLoading ? null : _register,
+          child: Center(
+            child: _isLoading
+                ? const SizedBox(
+              height: 24,
+              width: 24,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2.5,
+              ),
+            )
+                : Text(
+              l10n.register,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginLink(AppLocalizations l10n) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          l10n.alreadyHaveAccount,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 14,
+          ),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text(
+            l10n.loginNow,
+            style: const TextStyle(
+              color: Color(0xFFF59E0B),
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   Future<void> _register() async {
-    // Validasyon
-    if (_nameController.text.isEmpty) {
-      _showError('İsim gerekli');
-      return;
-    }
-
-    if (_emailController.text.isEmpty) {
-      _showError('Email gerekli');
-      return;
-    }
-
-    if (_passwordController.text.isEmpty) {
-      _showError('Şifre gerekli');
-      return;
-    }
-
-    if (_passwordController.text.length < 6) {
-      _showError('Şifre en az 6 karakter olmalı');
-      return;
-    }
-
-    if (_passwordController.text != _confirmPasswordController.text) {
-      _showError('Şifreler eşleşmiyor');
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
@@ -48,10 +379,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _isLoading = true;
     });
 
-    // Kayıt işlemi
     final result = await _apiService.register(
-      name: _nameController.text,
-      email: _emailController.text,
+      name: _nameController.text.trim(),
+      email: _emailController.text.trim(),
       password: _passwordController.text,
     );
 
@@ -60,218 +390,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     if (result['success']) {
-      // Başarılı kayıt, Dashboard'a git
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/dashboard');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        );
       }
     } else {
-      _showError(result['error']);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['error']),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 40),
-
-              // Başlık
-              const Text(
-                'Hesap Oluştur',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Para Takip ile finansal geleceğinizi planlayın',
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 50),
-
-              // İsim
-              _buildTextField(
-                controller: _nameController,
-                label: 'İsim',
-                icon: Icons.person,
-                hint: 'Adınız Soyadınız',
-              ),
-              const SizedBox(height: 20),
-
-              // Email
-              _buildTextField(
-                controller: _emailController,
-                label: 'Email',
-                icon: Icons.email,
-                hint: 'ornek@email.com',
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 20),
-
-              // Şifre
-              _buildTextField(
-                controller: _passwordController,
-                label: 'Şifre',
-                icon: Icons.lock,
-                hint: '******',
-                isPassword: true,
-              ),
-              const SizedBox(height: 20),
-
-              // Şifre Tekrar
-              _buildTextField(
-                controller: _confirmPasswordController,
-                label: 'Şifre Tekrar',
-                icon: Icons.lock_outline,
-                hint: '******',
-                isPassword: true,
-              ),
-              const SizedBox(height: 40),
-
-              // Kayıt Ol Butonu
-              _buildRegisterButton(),
-              const SizedBox(height: 20),
-
-              // Giriş Yap Linki
-              Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Zaten hesabınız var mı? ',
-                      style: TextStyle(color: Colors.white54),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text(
-                        'Giriş Yap',
-                        style: TextStyle(
-                          color: Color(0xFFFFD700),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    required String hint,
-    bool isPassword = false,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.2),
-            ),
-          ),
-          child: TextField(
-            controller: controller,
-            obscureText: isPassword,
-            keyboardType: keyboardType,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-              prefixIcon: Icon(icon, color: Colors.white70),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRegisterButton() {
-    return Container(
-      width: double.infinity,
-      height: 55,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFFFFD700),
-            Color(0xFFFFA500),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFFD700).withOpacity(0.5),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: _isLoading ? null : _register,
-          child: Center(
-            child: _isLoading
-                ? const CircularProgressIndicator(color: Colors.black)
-                : const Text(
-              'Kayıt Ol',
-              style: TextStyle(
-                color: Colors.black87,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   @override
@@ -279,7 +414,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 }
