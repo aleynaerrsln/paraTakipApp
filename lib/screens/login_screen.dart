@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../l10n/app_localizations.dart';
 import 'dashboard_screen.dart';
 import 'register_screen.dart';
+import 'forgot_password_screen.dart'; // ✅ YENİ IMPORT
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -96,7 +97,10 @@ class _LoginScreenState extends State<LoginScreen>
                         _buildEmailField(l10n),
                         const SizedBox(height: 20),
                         _buildPasswordField(l10n),
-                        const SizedBox(height: 32),
+                        // ✅ YENİ: ŞİFREMİ UNUTTUM BUTONU
+                        const SizedBox(height: 8),
+                        _buildForgotPasswordLink(l10n),
+                        const SizedBox(height: 24),
                         _buildLoginButton(l10n),
                         const SizedBox(height: 24),
                         _buildRegisterLink(l10n),
@@ -252,6 +256,34 @@ class _LoginScreenState extends State<LoginScreen>
               }
               return null;
             },
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ✅ YENİ METOD: ŞİFREMİ UNUTTUM BUTONU
+  Widget _buildForgotPasswordLink(AppLocalizations l10n) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: TextButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ForgotPasswordScreen(),
+            ),
+          );
+        },
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        ),
+        child: Text(
+          l10n.forgotPassword,
+          style: const TextStyle(
+            color: Color(0xFFF59E0B),
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),

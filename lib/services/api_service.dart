@@ -490,7 +490,7 @@ class ApiService {
     }
   }
 
-  // Şifre değiştir
+// Şifre değiştir
   Future<Map<String, dynamic>> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -501,7 +501,7 @@ class ApiService {
         return {'success': false, 'error': 'Token bulunamadı'};
       }
 
-      final response = await http.put(
+      final response = await http.post(  // ✅ PUT → POST DEĞİŞTİRİLDİ
         Uri.parse('$baseUrl/auth/change-password'),
         headers: {
           'Content-Type': 'application/json',
@@ -524,7 +524,6 @@ class ApiService {
       return {'success': false, 'error': 'Bağlantı hatası: $e'};
     }
   }
-
   // Hesabı sil
   Future<Map<String, dynamic>> deleteAccount() async {
     try {

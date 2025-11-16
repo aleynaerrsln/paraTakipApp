@@ -22,7 +22,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       return;
     }
 
-    // Email format kontrolü
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegex.hasMatch(_emailController.text)) {
       _showError('Geçerli bir email adresi girin');
@@ -43,7 +42,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     if (result['success']) {
       if (mounted) {
-        // Başarılı mesajı göster
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Şifre sıfırlama kodu email adresinize gönderildi!'),
@@ -52,7 +50,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
         );
 
-        // Reset ekranına git
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -79,7 +76,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0A0E21), // ✅ SCAFFOLD ARKAPLAN
       body: Container(
+        height: MediaQuery.of(context).size.height, // ✅ TAM YÜKSEKLIK
+        width: double.infinity, // ✅ TAM GENİŞLİK
         decoration: const BoxDecoration(
           gradient: RadialGradient(
             center: Alignment.center,
@@ -96,14 +96,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Geri butonu
                 IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
                   onPressed: () => Navigator.pop(context),
                 ),
                 const SizedBox(height: 40),
 
-                // İkon
                 Center(
                   child: Container(
                     padding: const EdgeInsets.all(20),
@@ -120,7 +118,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // Başlık
                 const Center(
                   child: Text(
                     'Şifremi Unuttum',
@@ -133,7 +130,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 10),
 
-                // Açıklama
                 Center(
                   child: Text(
                     'Email adresinizi girin, size bir\nsıfırlama kodu gönderelim',
@@ -146,15 +142,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 50),
 
-                // Email Input Card
                 _buildEmailCard(),
                 const SizedBox(height: 30),
 
-                // Kod Gönder Butonu
                 _buildSendCodeButton(),
                 const SizedBox(height: 20),
 
-                // Geri dön linki
                 Center(
                   child: TextButton(
                     onPressed: () => Navigator.pop(context),
