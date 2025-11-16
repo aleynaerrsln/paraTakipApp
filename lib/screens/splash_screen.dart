@@ -73,7 +73,7 @@ class SplashScreen extends StatelessWidget {
                   'KAYIT OL',
                   Colors.blue,
                       () {
-                    // TODO: Kayıt ekranına git
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Kayıt ekranı yakında!')),
                     );
